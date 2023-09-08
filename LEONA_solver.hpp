@@ -44,4 +44,29 @@ solverOutput leona_kernel(const std::string& folder_path,
                           double Dx,
                           int m,
                           double max_subgradient);
+
+// output a sequence of decisions
+solverOutput leona_knn2(const std::string& folder_path,
+                       int max_it,
+                       const std::vector<int>& it_pointer,
+                       const std::vector<double>& x_init,
+                       const std::vector<double>& observed_predictor,
+                       int N_pre,
+                       int N_incre,
+                       double Dx,
+                       int m,
+                       double max_subgradient);
+
+
+solverOutput leona_kernel2(const std::string& folder_path,
+                          int max_it,
+                          const std::vector<int>& it_pointer,
+                          const std::vector<double>& x_init,
+                          const std::vector<double>& observed_predictor,
+                          int N_pre,
+                          int N_incre,
+                          int flag_kernel,
+                          double Dx,
+                          int m,
+                          double max_subgradient);
 #endif /* LEONA_solver_hpp */

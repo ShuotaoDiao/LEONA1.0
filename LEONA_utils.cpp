@@ -302,6 +302,8 @@ validationResult twoStageLP_validation_outputResults(const std::string& folder_p
     writeFile << "Variance in estimating the mean: " << sqrt(result.variance/ _n_) << "\n";
     writeFile << result.alpha << "% confidence interval of expected cost: [" << result.CI_lower << ", " << result.CI_upper << "]\n";
     writeFile << "***************************************************\n";
+    // end cplex environment 
+    env_sub.end();
     return result;
 }
 
@@ -334,8 +336,69 @@ void interface_leona_knn(const std::string& folder_path,
     writeFile << res_val.mean << ", ";
     writeFile << time_elapse << ", ";
     writeFile << "kNN" << std::endl;
+    writeFile.close();
 }
 
+void interface_leona_knn2(const std::string& folder_path,
+                                    const std::string& validation_folder_path,
+                                    int max_it,
+                                    const std::vector<int>& it_pointer,
+                                    const std::vector<double>& x_init,
+                                    const std::vector<double>& observed_predictor,
+                                    int N_pre,
+                                    int N_incre,
+                                    double Dx,
+                                    int m,
+                          double max_subgradient) {
+    std::string outputResults_path = folder_path + "/leona1.0_summary2.csv";
+    const char* outputResults_path_const = outputResults_path.c_str();
+    std::fstream writeFile;
+    writeFile.open(outputResults_path_const,std::fstream::app);
+    solverOutput res = leona_knn2(folder_path, max_it, it_pointer, x_init, observed_predictor, N_pre, N_incre, Dx, m, max_subgradient);
+    // read file
+    std::string readPath = folder_path + "/sol(leona_knn1.0).txt";
+    const char* readPathConst = readPath.c_str(); // convert the string type path to constant
+    std::ifstream readFile(readPathConst); // create a readFile object
+    if (readFile.is_open()) {
+        std::string line1;
+        while (getline(readFile, line1)) { // get the whole line
+            std::stringstream ss1(line1); // convert a string into stream
+            unsigned int index_position = 0; // 1 iteration, 2 N, 3 time, 4 solution
+            std::vector<double> candidate_sol;
+            while (getline(ss1, line1, ',')) {
+                index_position += 1;
+                std::stringstream ss2(line1);
+                if (index_position == 1) { // iteration
+                    int it;
+                    ss2 >> it;
+                    writeFile << it << ", "; // iteration
+                    // sample
+                    int total_sample = N_pre + it;
+                    writeFile << total_sample << ", "; // sample
+                }
+                else if (index_position == 2) {
+                    int N;
+                    ss2 >> N;
+                    writeFile << N << ", ";
+                }
+                else if (index_position == 3) {
+                    double time_elapse;
+                    ss2 >> time_elapse;
+                    writeFile << time_elapse << ", ";
+                }
+                else if (index_position > 3) {
+                    double val;
+                    ss2 >> val;
+                    candidate_sol.push_back(val);
+                }
+            } // end while (getline(ss1, line1, ','))
+            // validate the solution quality
+            validationResult res_val = twoStageLP_validation_outputResults(validation_folder_path, candidate_sol);
+            writeFile << res_val.mean << ", " << "kNN" << std::endl;
+        } // end while (getline(readFile, line1))
+    }
+    writeFile.close();
+}
 
 void interface_leona_kernel(const std::string& folder_path,
                             const std::string& validation_folder_path,
@@ -381,5 +444,103 @@ void interface_leona_kernel(const std::string& folder_path,
         default:
             break;
     }
-    
+    writeFile.close();
+}
+
+void interface_leona_kernel2(const std::string& folder_path,
+                            const std::string& validation_folder_path,
+                            int max_it,
+                            const std::vector<int>& it_pointer,
+                            const std::vector<double>& x_init,
+                            const std::vector<double>& observed_predictor,
+                            int N_pre,
+                            int N_incre,
+                            int flag_kernel,
+                            double Dx,
+                            int m,
+                            double max_subgradient) {
+    std::string outputResults_path = folder_path + "/leona1.0_summary2.csv";
+    const char* outputResults_path_const = outputResults_path.c_str();
+    std::fstream writeFile;
+    writeFile.open(outputResults_path_const,std::fstream::app);
+    solverOutput res = leona_kernel2(folder_path, max_it, it_pointer, x_init, observed_predictor, N_pre, N_incre, flag_kernel, Dx, m, max_subgradient);
+    // read file
+    std::string readPath;
+    switch (flag_kernel) {
+        case 1:
+            // Naive
+            readPath = folder_path + "/sol(leona_N1.0).txt";
+            break;
+        case 2:
+            // Epanechnikov
+            readPath = folder_path + "/sol(leona_E1.0).txt";
+            break;
+        case 3:
+            // Quartic
+            readPath = folder_path + "/sol(leona_Q1.0).txt";
+            break;
+        case 4:
+            // Gaussian
+            readPath = folder_path + "/sol(leona_G1.0).txt";
+            break;
+        default:
+            break;
+    }
+    const char* readPathConst = readPath.c_str(); // convert the string type path to constant
+    std::ifstream readFile(readPathConst); // create a readFile object
+    if (readFile.is_open()) {
+        std::string line1;
+        while (getline(readFile, line1)) { // get the whole line
+            std::stringstream ss1(line1); // convert a string into stream
+            unsigned int index_position = 0; // 1 iteration, 2 N, 3 time, 4 solution
+            std::vector<double> candidate_sol;
+            while (getline(ss1, line1, ',')) {
+                index_position += 1;
+                std::stringstream ss2(line1);
+                if (index_position == 1) { // iteration
+                    int it;
+                    ss2 >> it;
+                    writeFile << it << ", "; // iteration
+                    // sample
+                    int total_sample = N_pre + it;
+                    writeFile << total_sample << ", "; // sample
+                }
+                else if (index_position == 2) {
+                    int N;
+                    ss2 >> N;
+                    writeFile << N << ", ";
+                }
+                else if (index_position == 3) {
+                    double time_elapse;
+                    ss2 >> time_elapse;
+                    writeFile << time_elapse << ", ";
+                }
+                else if (index_position > 3) {
+                    double val;
+                    ss2 >> val;
+                    candidate_sol.push_back(val);
+                }
+            } // end while (getline(ss1, line1, ','))
+            // validate the solution quality
+            validationResult res_val = twoStageLP_validation_outputResults(validation_folder_path, candidate_sol);
+            writeFile << res_val.mean << ", ";
+            switch (flag_kernel) {
+                case 1:
+                    writeFile << "Naive" << std::endl;
+                    break;
+                case 2:
+                    writeFile << "Epanechnikov" << std::endl;
+                    break;
+                case 3:
+                    writeFile << "Quartic" << std::endl;
+                    break;
+                case 4:
+                    writeFile << "Gaussian" << std::endl;
+                    break;
+                default:
+                    break;
+            }
+        } // end while (getline(readFile, line1))
+    }
+    writeFile.close();
 }
